@@ -1,0 +1,341 @@
+# Thirdwatch Customer Continuity. A fictional company.
+# Style: deadpan call-centre voice, two sentences per beat at most, bureaucratic
+# horror, never violent, never about real people. See .kiro/steering/content-style.md.
+# Every tag that a menu, next, timeout or hangup can name must have at least one
+# node with no `requires` (a fallback). `npm run check` lints this.
+
+# ---------- answering ----------
+
+- id: greeting_01
+  tag: greeting
+  speaker: robot
+  kind: tts
+  say: "Good evening. You have reached Thirdwatch Customer Continuity. Your call is important to us. It has always been important to us."
+  next: { tag: menu_main }
+
+- id: greeting_night2
+  tag: greeting
+  speaker: robot
+  kind: tts
+  requires: { night: ">=2" }
+  say: "Welcome back. This is call number {{calls}}. We kept your place."
+  next: { tag: menu_main }
+
+- id: greeting_ignored
+  tag: greeting
+  speaker: robot
+  kind: tts
+  requires: { flags_all: [ignored_ring] }
+  effects: { flags_remove: [ignored_ring], dread: 1 }
+  say: "There you are. The last time we rang, you let it ring. We let it ring too, for a while, after you stopped listening."
+  next: { tag: menu_main }
+
+- id: self_call_01
+  tag: self_call
+  speaker: robot
+  kind: tts
+  say: "Thirdwatch. You called us. We did not expect you so soon."
+  effects: { trust: 1 }
+  next: { tag: menu_main }
+
+- id: self_call_hungup
+  tag: self_call
+  speaker: robot
+  kind: tts
+  requires: { flags_all: [hung_up_on_it] }
+  say: "Thirdwatch. You came back on your own. That is the right thing to do."
+  effects: { trust: 1, dread: 1 }
+  next: { tag: menu_main }
+
+# ---------- callbacks (after you hang up) ----------
+
+- id: callback_01
+  tag: callback
+  speaker: robot
+  kind: tts
+  say: "Hello. We seem to have been disconnected. Thirdwatch never disconnects."
+  effects: { dread: 1 }
+  next: { tag: menu_main }
+
+- id: callback_counted
+  tag: callback
+  speaker: robot
+  kind: tts
+  requires: { hangups: ">=2" }
+  say: "You have hung up {{hangups_times}} now. Each one has been added to your file."
+  effects: { dread: 1, patience: -1 }
+  next: { tag: menu_main }
+
+- id: callback_human
+  tag: callback
+  speaker: human
+  kind: recorded
+  audio: audio/human/h_callback_01.wav
+  requires: { night: ">=3", trust: ">=1" }
+  say: "Hi, sorry, it's me again. Please don't hang up this time, I don't think they let you keep hanging up."
+  effects: { trust: 1, flags_add: [heard_human] }
+  next: { tag: robot_override }
+
+# ---------- main menu ----------
+
+- id: menu_main_01
+  tag: menu_main
+  speaker: robot
+  kind: tts
+  say: "For billing, press or dial one. For your records, two. To report a problem, three. For an operator, zero. To end this call, nine."
+  menu:
+    "1": { tag: billing }
+    "2": { tag: records }
+    "3": { tag: problem }
+    "0": { tag: operator }
+    "4": { tag: four }
+    "9": { tag: end_attempt }
+    timeout: { after_s: 10, tag: silence }
+
+- id: menu_main_tired
+  tag: menu_main
+  speaker: robot
+  kind: tts
+  requires: { patience: "<=2" }
+  say: "The menu has not changed. One, billing. Two, records. Three, problems. Zero, a person. Nine, the door."
+  menu:
+    "1": { tag: billing }
+    "2": { tag: records }
+    "3": { tag: problem }
+    "0": { tag: operator }
+    "4": { tag: four }
+    "9": { tag: end_attempt }
+    timeout: { after_s: 8, tag: silence }
+
+# ---------- billing ----------
+
+- id: billing_01
+  tag: billing
+  speaker: robot
+  kind: tts
+  say: "Your balance is zero. It has always been zero. To dispute this, press one. To return to the menu, press star."
+  effects: { dread: 1 }
+  menu:
+    "1": { tag: hold, effects: { patience: -1 } }
+    "*": { tag: menu_main }
+    timeout: { after_s: 8, tag: silence }
+
+- id: billing_02
+  tag: billing
+  speaker: robot
+  kind: tts
+  requires: { dread: ">=3" }
+  say: "You do not owe us money. You owe us {{night}} nights. To pay now, stay on the line."
+  effects: { dread: 1 }
+  menu:
+    "*": { tag: menu_main }
+    timeout: { after_s: 6, tag: hold }
+
+# ---------- records ----------
+
+- id: records_01
+  tag: records
+  speaker: robot
+  kind: tts
+  say: "Your records show that you dial {{dial_speed}}. {{think}}."
+  effects: { dread: 1, flags_add: [heard_records] }
+  next: { tag: menu_main }
+
+- id: records_02
+  tag: records
+  speaker: robot
+  kind: tts
+  requires: { flags_all: [heard_records] }
+  say: "Your file now includes the fact that you asked to see your file. Is that what you wanted? Press one for yes."
+  menu:
+    "1": { tag: menu_main, effects: { trust: 1 } }
+    timeout: { after_s: 6, tag: menu_main, effects: { dread: 1 } }
+
+# ---------- problems ----------
+
+- id: problem_01
+  tag: problem
+  speaker: robot
+  kind: tts
+  say: "Please describe your problem after the tone. Thank you. Your problem has been placed in the queue."
+  next: { tag: hold }
+
+- id: problem_02
+  tag: problem
+  speaker: robot
+  kind: tts
+  requires: { calls: ">=3" }
+  say: "Our records show your problem is the telephone. We have no record of a telephone at your address."
+  effects: { dread: 2 }
+  next: { tag: hold }
+
+# ---------- hold ----------
+
+- id: hold_01
+  tag: hold
+  speaker: robot
+  kind: hold
+  hold_s: 9
+  next: { tag: hold_position }
+
+- id: hold_position_01
+  tag: hold_position
+  speaker: robot
+  kind: tts
+  say: "Thank you for holding. You are caller number {{position}}."
+  next: { tag: hold_more }
+
+- id: hold_position_02
+  tag: hold_position
+  speaker: robot
+  kind: tts
+  requires: { dread: ">=4" }
+  say: "You are caller number {{position}}. The number goes up when you hold. We are working on this."
+  next: { tag: hold_more }
+
+- id: hold_more_01
+  tag: hold_more
+  speaker: robot
+  kind: tts
+  say: "To keep holding, do nothing. To return to the menu, press star."
+  menu:
+    "*": { tag: menu_main }
+    timeout: { after_s: 5, tag: hold }
+
+- id: hold_more_human
+  tag: hold_more
+  speaker: robot
+  kind: tts
+  requires: { night: ">=2", flags_absent: [heard_human] }
+  say: "An agent has become available."
+  next: { tag: human_helper }
+
+# ---------- the operator and the human ----------
+
+- id: operator_01
+  tag: operator
+  speaker: robot
+  kind: tts
+  say: "There are no operators. There is only continuity. Returning you to the menu."
+  effects: { flags_add: [pressed_zero], trust: -1 }
+  next: { tag: menu_main }
+
+- id: operator_02
+  tag: operator
+  speaker: robot
+  kind: tts
+  requires: { flags_all: [pressed_zero] }
+  say: "Connecting you to a person."
+  next: { tag: human_helper }
+
+- id: human_helper_01
+  tag: human_helper
+  speaker: human
+  kind: recorded
+  audio: audio/human/h_help_01.wav
+  cut_at_ms: 5200
+  say: "Hello? Oh thank god, a real line. Listen, if you dial four, four times, slowly, it lets you"
+  effects: { trust: 2, flags_add: [heard_human] }
+  next: { tag: robot_override }
+
+- id: human_helper_02
+  tag: human_helper
+  speaker: human
+  kind: recorded
+  audio: audio/human/h_help_02.wav
+  requires: { flags_all: [heard_human] }
+  cut_at_ms: 4200
+  say: "It's me again. Don't press nine, nine just brings you back. Dial four, keep dialing four, and don't"
+  effects: { trust: 1 }
+  next: { tag: robot_override }
+
+- id: robot_override_01
+  tag: robot_override
+  speaker: robot
+  kind: tts
+  say: "We apologise for the interruption. That agent is no longer available. Returning you to the menu."
+  effects: { dread: 2 }
+  next: { tag: menu_main }
+
+# ---------- four ----------
+# The human's advice. Dialing four from the menu after hearing the human.
+
+- id: four_01
+  tag: four
+  speaker: robot
+  kind: tts
+  say: "Four is not an option."
+  effects: { dread: 1 }
+  next: { tag: menu_main }
+
+- id: four_escape
+  tag: four
+  speaker: robot
+  kind: tts
+  requires: { trust: ">=3", flags_all: [heard_human] }
+  weight: 20
+  say: "Four, four, four. You have found the service exit. Goodbye, until the next night."
+  effects: { flags_add: [escaped] }
+  end: true
+
+# ---------- leaving ----------
+
+- id: end_attempt_01
+  tag: end_attempt
+  speaker: robot
+  kind: tts
+  say: "To end this call, please hang up. If you have already hung up, please hang up again."
+  effects: { patience: -1 }
+  next: { tag: menu_main }
+
+- id: end_attempt_02
+  tag: end_attempt
+  speaker: robot
+  kind: tts
+  requires: { night: ">=2", dread: ">=4" }
+  say: "Thank you for calling Thirdwatch Customer Continuity. This call has ended. You are still on the line."
+  effects: { dread: 1 }
+  next: { tag: hold }
+
+- id: goodbye_01
+  tag: goodbye
+  speaker: robot
+  kind: tts
+  say: "Thank you for your patience. We will call you."
+  end: true
+
+# ---------- silence and mistakes ----------
+
+- id: silence_01
+  tag: silence
+  speaker: robot
+  kind: tts
+  say: "We did not hear a choice. We heard breathing. Please choose."
+  effects: { dread: 1 }
+  next: { tag: menu_main }
+
+- id: silence_02
+  tag: silence
+  speaker: robot
+  kind: tts
+  requires: { patience: "<=1" }
+  say: "Thank you for your silence. It has been recorded for quality purposes."
+  effects: { dread: 1 }
+  next: { tag: goodbye }
+
+- id: invalid_01
+  tag: invalid
+  speaker: robot
+  kind: tts
+  say: "That is not an option. It used to be."
+  effects: { patience: -1 }
+  next: { tag: menu_main }
+
+- id: invalid_02
+  tag: invalid
+  speaker: robot
+  kind: tts
+  requires: { dread: ">=5" }
+  say: "Somebody else pressed that last night. We are still looking for them."
+  effects: { dread: 1 }
+  next: { tag: menu_main }

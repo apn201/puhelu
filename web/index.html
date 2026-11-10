@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Puhelu</title>
+    <meta name="description" content="A haunted phone line. Answer it. The web version of an Arduino UNO Q telephone haunting." />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☎</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="gate" class="gate">
+      <div class="gate-card">
+        <p class="eyebrow">Kiroween 2026 · Resurrection</p>
+        <h1>Puhelu</h1>
+        <p class="lede">An old telephone that rings at night. Whoever answers is placed in a phone menu run by something with a memory. Hang up and it calls back.</p>
+        <p class="small">This is the web version of a real phone: an Arduino UNO Q and an AG1171 line interface driving a 1950s handset. Same engine, same decoders, no hardware needed.</p>
+        <button id="plug" class="btn primary">Plug in the phone</button>
+        <p class="small dim">Sound on. Headphones help. Your state is kept in this browser only.</p>
+      </div>
+    </div>
+
+    <main class="stage">
+      <section class="desk" aria-label="Telephone">
+        <div class="lamp" aria-hidden="true"></div>
+        <div id="phone" class="phone">
+          <svg id="phone-svg" viewBox="0 0 420 430" role="img" aria-label="Rotary telephone">
+            <defs>
+              <linearGradient id="bakelite" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#9b2a24" />
+                <stop offset="0.55" stop-color="#6e1814" />
+                <stop offset="1" stop-color="#3b0b09" />
+              </linearGradient>
+              <radialGradient id="shine" cx="0.35" cy="0.25" r="0.7">
+                <stop offset="0" stop-color="#fff" stop-opacity="0.28" />
+                <stop offset="0.5" stop-color="#fff" stop-opacity="0.04" />
+                <stop offset="1" stop-color="#fff" stop-opacity="0" />
+              </radialGradient>
+              <radialGradient id="plate" cx="0.5" cy="0.45" r="0.6">
+                <stop offset="0" stop-color="#efe6d2" />
+                <stop offset="1" stop-color="#c9bc9f" />
+              </radialGradient>
+            </defs>
+            <ellipse cx="210" cy="418" rx="190" ry="10" fill="#000" opacity="0.5" />
+            <path id="cord" d="" fill="none" stroke="#2a0807" stroke-width="5" stroke-linecap="round" />
+            <path d="M40 410 L80 170 Q86 150 108 150 L312 150 Q334 150 340 170 L380 410 Z" fill="url(#bakelite)" />
+            <path d="M40 410 L80 170 Q86 150 108 150 L312 150 Q334 150 340 170 L380 410 Z" fill="url(#shine)" />
+            <rect x="150" y="138" width="22" height="20" rx="4" fill="#2a0807" />
+            <rect x="248" y="138" width="22" height="20" rx="4" fill="#2a0807" />
+            <g id="dial-base" transform="translate(210 292)">
+              <circle r="106" fill="#1d0504" />
+              <circle r="100" fill="url(#plate)" />
+              <g id="dial-numbers" font-family="Fraunces, Georgia, serif" font-size="17" font-weight="700" fill="#2b1d12" text-anchor="middle" dominant-baseline="central"></g>
+              <g id="dial-disc"></g>
+              <circle r="30" fill="#efe6d2" stroke="#8a7b60" stroke-width="1" />
+              <text id="dial-label" y="-2" font-family="IBM Plex Mono, monospace" font-size="8.5" fill="#5a4a35" text-anchor="middle">THIRDWATCH</text>
+              <text y="10" font-family="IBM Plex Mono, monospace" font-size="7" fill="#7a6a50" text-anchor="middle">0700 NIGHT</text>
+              <path id="finger-stop" d="" fill="#c8c2b6" stroke="#6b6458" stroke-width="1.5" />
+            </g>
+            <g id="handset" class="handset" tabindex="0" role="button" aria-label="Handset. Press to lift or replace.">
+              <path d="M70 118 Q70 92 98 90 L322 90 Q350 92 350 118 L350 122 Q350 132 340 132 L80 132 Q70 132 70 122 Z" fill="url(#bakelite)" />
+              <ellipse cx="96" cy="128" rx="40" ry="16" fill="#5a1310" />
+              <ellipse cx="324" cy="128" rx="40" ry="16" fill="#5a1310" />
+              <path d="M70 118 Q70 92 98 90 L322 90 Q350 92 350 118" fill="url(#shine)" />
+            </g>
+          </svg>
+        </div>
+
+        <div id="caption" class="caption" aria-live="polite">
+          <span class="who" id="who"></span>
+          <span class="text" id="caption-text">The line is quiet.</span>
+        </div>
+
+        <div class="controls">
+          <div class="seg" role="group" aria-label="Dial type">
+            <button id="mode-rotary" class="seg-btn on">Rotary</button>
+            <button id="mode-keypad" class="seg-btn">Keypad</button>
+          </div>
+          <button id="hook-btn" class="btn">Lift handset</button>
+        </div>
+        <div id="keypad" class="keypad" hidden></div>
+        <p class="hint">Lift the handset (click it, or press <kbd>Space</kbd>). Drag a finger hole round to the metal stop and let go, or type a digit.</p>
+      </section>
+
+      <aside class="monitor" aria-label="Line monitor">
+        <header class="mon-head">
+          <h2>Line monitor</h2>
+          <span id="phase" class="phase">idle</span>
+        </header>
+        <div class="scope-wrap">
+          <canvas id="scope" width="560" height="120" aria-label="Hook switch trace"></canvas>
+          <div class="scope-legend"><span>SHK · last 4 s</span><span>high = off hook · dips = dial pulses</span></div>
+        </div>
+        <div class="digits" id="digits" aria-label="Decoded digits"></div>
+        <div class="meters">
+          <div class="meter"><span>Dread</span><div class="bar" id="m-dread"></div></div>
+          <div class="meter"><span>Trust</span><div class="bar" id="m-trust"></div></div>
+          <div class="meter"><span>Patience</span><div class="bar" id="m-patience"></div></div>
+        </div>
+        <dl class="facts">
+          <div><dt>Night</dt><dd id="f-night">1</dd></div>
+          <div><dt>Calls</dt><dd id="f-calls">0</dd></div>
+          <div><dt>Hang-ups</dt><dd id="f-hangups">0</dd></div>
+          <div><dt>Dial speed</dt><dd id="f-pps">–</dd></div>
+        </dl>
+        <div class="flags" id="flags"></div>
+        <div class="node" id="node"></div>
+        <ol class="log" id="log"></ol>
+        <div class="mon-actions">
+          <button id="ring-btn" class="btn">Ring me now</button>
+          <button id="night-btn" class="btn">Next night</button>
+          <button id="reset-btn" class="btn ghost">Forget me</button>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="foot">
+      <p>Puhelu is open source (MIT). The engine, pulse decoder and DTMF decoder here are the same TypeScript that runs on the Arduino UNO Q. Thirdwatch Customer Continuity is fictional. Line-side prior art: Analog Redial (sdylewski) and weeBell (Dan Julio).</p>
+    </footer>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
