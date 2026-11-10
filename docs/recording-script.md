@@ -4,6 +4,26 @@ You are the "real person" in an IVR that is not entirely run by people. Prerecor
 
 The company is fictional: Thirdwatch Customer Continuity. Do not use real company names, real people, real phone numbers or your own name or address in any line.
 
+## 0. Record first: the lines the web phone uses now
+
+These three are wired into `content/nodes.yaml` today. Everything else in this file is for later content. The words must match the node's `say` text, because that text is the subtitle.
+
+| File | Node | Section |
+|---|---|---|
+| h_help_01.wav | human_helper_01 | 7 |
+| h_help_02.wav | human_helper_02 | 7 |
+| h_callback_01.wav | callback_human | 8 |
+
+h_help_01 and h_help_02 carry the game's only exit (dial four), so the word "four" must be clear before the cut.
+
+After recording: pick the best take, then process and drop it in place (needs ffmpeg):
+
+```
+ffmpeg -i h_help_01_t2.wav -af "highpass=f=300,lowpass=f=3400,silenceremove=start_periods=1:start_threshold=-45dB,loudnorm=I=-18:TP=-3" -ac 1 -ar 16000 web/public/audio/human/h_help_01.wav
+```
+
+Then tell Claude or Kiro the time in ms where the cut word starts in each file, so `cut_at_ms` in nodes.yaml can be set to it (the current 5200 and 4200 are guesses).
+
 ## 1. Voice and delivery
 
 Two registers, same person.
@@ -69,8 +89,10 @@ Record these as full takes. The engine cuts them at the marked point, plays a sh
 
 | ID | Line | Direction | Cut |
 |---|---|---|---|
-| h_help_01 | "Listen. I'm not supposed to say this. The menu isn't really for you." | Tight, fast, glancing away. | after "say this" |
-| h_help_02 | "Don't press nine. It listens to nine." | Urgent whisper. | after "press nine" |
+| h_help_01 | "Hello? Oh thank god, a real line. Listen, if you dial four, four times, slowly, it lets you out of the..." | Relief first, then fast and low, like someone might walk in. Keep going past "lets you" so the cut lands mid-word. | after "it lets you" |
+| h_help_07 | "Listen. I'm not supposed to say this. The menu isn't really for you." | Tight, fast, glancing away. | after "say this" |
+| h_help_02 | "It's me again. Don't press nine, nine just brings you back. Dial four, keep dialing four, and don't let it..." | Urgent whisper, closer to the mic than h_help_01. Keep going past "don't". | after "and don't" |
+| h_help_08 | "Don't press nine. It listens to nine." | Urgent whisper. | after "press nine" |
 | h_help_03 | "If it asks for your name, don't give it one. It already has the number." | Low, careful. | after "give it one" |
 | h_help_04 | "Hang up. No, don't hang up, it will call back. Wait. Let me think." | Real panic, held down. | after "call back" |
 | h_help_05 | "I've been on this shift a very long time. I can't remember the front door." | Flat, worn out. | none |
@@ -89,6 +111,7 @@ The phone rings, the caller lifts it, the first word is one of these. Pick by fl
 | h_cb_05 | "Don't hang up this time." | Quiet one. Not a threat. A request. | D>=5 |
 | h_cb_06 | "It's all right. You can hang up. It'll just ring again." | Resigned, almost tender. | D>=6 |
 | h_cb_07 | "Good evening. Again." | Dry. | calls>=3 |
+| h_callback_01 | "Hi, sorry, it's me again. Please don't hang up this time, I don't think they let you keep hanging up." | The quiet one, apologetic, a little out of breath. Full line, no cut. | N3+, T>=1 |
 
 ## 9. Endings (Operator, then quiet)
 

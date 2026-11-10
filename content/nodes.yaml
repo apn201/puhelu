@@ -234,7 +234,7 @@
   kind: recorded
   audio: audio/human/h_help_01.wav
   cut_at_ms: 5200
-  say: "Hello? Oh thank god, a real line. Listen, if you dial four, four times, slowly, it lets you"
+  say: "Hello? Oh thank god, a real line. Listen, if you dial four, four times, slowly, it lets you out of the"
   effects: { trust: 2, flags_add: [heard_human] }
   next: { tag: robot_override }
 
@@ -245,7 +245,7 @@
   audio: audio/human/h_help_02.wav
   requires: { flags_all: [heard_human] }
   cut_at_ms: 4200
-  say: "It's me again. Don't press nine, nine just brings you back. Dial four, keep dialing four, and don't"
+  say: "It's me again. Don't press nine, nine just brings you back. Dial four, keep dialing four, and don't let it"
   effects: { trust: 1 }
   next: { tag: robot_override }
 
