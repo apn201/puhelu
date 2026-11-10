@@ -6,7 +6,7 @@ Target: Kiroween 2026 (Devpost, Resurrection category). Deadline Dec 4 2026, 2:0
 
 ## Try it
 
-Web phone: (GitHub Pages URL goes here once the repo is public)
+Web phone: **https://apn201.github.io/puhelu/**
 
 Lift the handset, wait for Thirdwatch, then dial. Drag a finger hole to the metal stop, type a digit, or switch to the keypad. Hang up and wait. The line monitor on the right shows the raw hook-switch trace, every decoded digit with its pulse rate, and what the haunting thinks of you.
 
